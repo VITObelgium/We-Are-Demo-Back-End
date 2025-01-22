@@ -18,7 +18,7 @@ import express, { Request as ExpressRequest, Response as ExpressResponse } from 
 import bodyParser from "body-parser";
 import { authenticationEndpoint } from "./endpoint/authentication-endpoint";
 import podEndpoint from "./endpoint/pod-endpoint";
-import { overrideSessionData } from "@weare/weare-expressjs";
+import { overrideSessionData } from "@vito-nv/weare-expressjs";
 import { initializeGlobal } from "./initialize/global-initialize";
 import session from "express-session";
 import dotEnv from "dotenv";
@@ -39,18 +39,15 @@ const cors = require("cors");
  */
 overrideSessionData();
 
-
-/**
- * Call function to initialize global settings: environment variables used and initialization of services.
- */
-initializeGlobal();
-
-
 /**
  * Helper function to validate that all necessary environment variables are set.
  */
 initializeEnvironment(path.join(__dirname, "../", ".env.example"));
 
+/**
+ * Call function to initialize global settings: environment variables used and initialization of services.
+ */
+initializeGlobal();
 
 /**
  * Configure session handling middleware.

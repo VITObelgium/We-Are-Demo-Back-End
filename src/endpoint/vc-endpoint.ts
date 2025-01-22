@@ -13,7 +13,7 @@
 
 import {Express} from "express";
 import log from "loglevel";
-import { getSession, getPods } from "@weare/weare-expressjs";
+import { getSession, getPods } from "@vito-nv/weare-expressjs";
 import httpContext from "express-http-context";
 
 export default function vcEndpoint(app: Express) {

@@ -20,7 +20,7 @@
  * ```
  */
 
-import {AthumiConfig, OidcConfig, PodService, VcService, OidcService, AthumiService, VcConfig} from "@weare/weare-core";
+import {AthumiConfig, OidcConfig, PodService, VcService, OidcService, AthumiService, VcConfig} from "@vito-nv/weare-core";
 import {IStorage} from "@inrupt/solid-client-authn-node";
 import {InMemoryStorage} from "@inrupt/solid-client-authn-core";
 

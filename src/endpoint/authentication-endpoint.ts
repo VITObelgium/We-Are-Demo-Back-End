@@ -12,7 +12,7 @@
 import {Session} from "@inrupt/solid-client-authn-node";
 import { Express } from "express";
 import log from "loglevel";
-import { getSession, getSessionOptional } from "@weare/weare-expressjs";
+import { getSession, getSessionOptional } from "@vito-nv/weare-expressjs";
 
 export function authenticationEndpoint(app: Express) {
 

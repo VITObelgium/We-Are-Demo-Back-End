@@ -10,7 +10,7 @@
 
 import { Express } from "express";
 import log from "loglevel";
-import {getPodsOptional, getSessionOptional} from "@weare/weare-expressjs";
+import {getPodsOptional, getSessionOptional} from "@vito-nv/weare-expressjs";
 import { AccessGrant } from "@inrupt/solid-client-access-grants";
 
 export function sessionEndpoint(app: Express) {

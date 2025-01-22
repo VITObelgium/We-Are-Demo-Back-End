@@ -17,7 +17,7 @@ import {
   getSession,
   getResource,
   writeFile, getFile
-} from "@weare/weare-expressjs"
+} from "@vito-nv/weare-expressjs"
 
 export default function podEndpoint(app: Express) {
 

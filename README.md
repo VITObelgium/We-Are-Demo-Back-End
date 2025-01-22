@@ -1,30 +1,30 @@
-# Introduction - We Are Project and We Are Platform
+# Introduction
+
+## We Are Project and We Are Platform
 
 The We Are partnership, consisting of the Flemish Institute for Technological Research (VITO) – Flemish Patients' Platform (VPP) – Domus Medica (DM) – Zorgnet Icuro (ZI), is committed to enabling the ethical and safe reuse of personal health data for both public and private purposes, with the citizen at the center. The project collaborates closely with Athumi, the provider of the [SOLID](https://solidproject.org/TR/) data vault system in Flanders. This system allows citizens to securely store their data in vaults and share it with third parties based on consent. This project was made possible thanks to the European recovery fund; the Department of Economy, Science & Innovation; the Department of Care & the Department of Digital Flanders. More information at [www.we-are-health.be](https://www.we-are-health.be).
 
-# Demo We Are Backend
-
+## What
 This is the demo Backend project for implementing on the We Are platform. This backend is using 2 We Are libraries to make the flow of interacting with Solid pods easy: ```We Are Core```, which is responsible for interaction with the pod and the Solid OIDC flow and ```We Are Expressjs```, which is a middleware library that can be attached to Expressjs applications to take care of these interactions automatically. Let's first discuss how to run the program with docker:
 
-## Run locally using Docker Compose
+# Setup
 
-Requires Docker & Docker Compose. Follow these steps to install and run the app:
+Before running this application, please copy the .env.example file to a new .env file. We Are using DotEnv to provide the environment variables for the application to run.  
+Acquire your credentials from your VITO NV - We Are contact person. Environment variables you need to acquire are:
+- WEARE_OIDC_CLIENT_ID
+- WEARE_OIDC_CLIENT_SECRET
+- CITIZEN_OIDC_CLIENT_ID
+- CITIZEN_OIDC_CLIENT_SECRET
 
-0. Make sure the vpp-prem-initializer-backend is running as this app depends on the "stubs_postgres" database of that project.
-1. Install all Node.js dependencies.
-    ```console
-    docker-compose run --rm --no-deps node npm install
-    ```
-2. Install all Node.js dependencies for ESLint.
-    ```console
-    docker-compose run --rm --no-deps --workdir /usr/src/app/eslint-config/eslint-config-base node npm install
-    ```
-3. Spin up the Docker Compose stack.
-    ```console
-    docker-compose up -d
-    ``` 
-4. Back-end endpoints will now be served at http://localhost:`PORT` where `PORT` is an environment variable (see [.env](.env)).
-5. You can start a debug session using IntelliJ, see [this page](https://www.jetbrains.com/help/idea/running-and-debugging-node-js.html#5fbb1f93). You can change the debug port with the `DEBUG_PORT` environment variable (see [.env](.env)).
+Before retrieving these credentials you will need to enroll with both We Are & ACM/IDM.
+
+After you have acquired the credentials and saving them to the .env file, you can run the application with the following command:
+```
+npm run start
+```
+No build is required.
+
+# Included services
 
 ## Authentication endpoints
 
