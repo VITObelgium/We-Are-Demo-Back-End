@@ -5,9 +5,11 @@
 The We Are partnership, consisting of the Flemish Institute for Technological Research (VITO) – Flemish Patients' Platform (VPP) – Domus Medica (DM) – Zorgnet Icuro (ZI), is committed to enabling the ethical and safe reuse of personal health data for both public and private purposes, with the citizen at the center. The project collaborates closely with Athumi, the provider of the [SOLID](https://solidproject.org/TR/) data vault system in Flanders. This system allows citizens to securely store their data in vaults and share it with third parties based on consent. This project was made possible thanks to the European recovery fund; the Department of Economy, Science & Innovation; the Department of Care & the Department of Digital Flanders. More information at [www.we-are-health.be](https://www.we-are-health.be).
 
 ## What
-This is the demo Backend project for implementing on the We Are platform. This backend is using 2 We Are libraries to make the flow of interacting with Solid pods easy: ```We Are Core```, which is responsible for interaction with the pod and the Solid OIDC flow and ```We Are Expressjs```, which is a middleware library that can be attached to Expressjs applications to take care of these interactions automatically. Let's first discuss how to run the program with docker:
+This is the We Are Demo Back-End project to showcase an example implementation on the We Are platform. This back end is using 2 We Are libraries to make the flow of interacting with Solid pods easy: ```We Are Core```, which is responsible for interaction with the pod and the Solid OIDC flow and ```We Are Expressjs```, which is a middleware library that can be attached to Expressjs applications to take care of these interactions automatically.
 
 # Setup
+
+Run `npm install` to install all dependencies for the project.
 
 Before running this application, please copy the .env.example file to a new .env file. We Are using DotEnv to provide the environment variables for the application to run.  
 Acquire your credentials from your VITO NV - We Are contact person. Environment variables you need to acquire are:
