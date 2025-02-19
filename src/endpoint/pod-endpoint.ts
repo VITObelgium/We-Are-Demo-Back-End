@@ -16,7 +16,7 @@ import {
   validateAccessGrant,
   getSession,
   getResource,
-  writeFile, getFile
+  writeFile, getFile, writeResource
 } from "@vito-nv/weare-expressjs"
 
 export default function podEndpoint(app: Express) {
@@ -67,11 +67,19 @@ export default function podEndpoint(app: Express) {
    *
    * @throws {Error} If an error occurs during resource creation, it will be passed to the Express error handler.
    */
+  app.post("/write", async (req, res, next) => {
+    log.debug("Endpoint '/write' called");
+    next();
+  }, getSession.bind({ storage: globalThis.solidStorage }), validateAccessGrant, writeResource.bind({ resourceUrlParameterKey: "resourceUrl", podService: globalThis.podService! }), async (req, res, next) => {
+    res.send("Resource created");
+  });
+
   // @ts-ignore
   app.post("/write-file", async (req, res, next) => {
-    log.debug("Endpoint '/write' called");
+    log.debug("Endpoint '/write-file' called");
     next();
   }, getSession.bind({ storage: globalThis.solidStorage }), validateAccessGrant, writeFile.bind({ fileUrlParameterKey: "fileUrl", podService: globalThis.podService! }), async (req, res, next) => {
     res.send("File created");
   });
+
 }

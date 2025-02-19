@@ -5,7 +5,8 @@
   "main": "src/app.ts",
   "author": "VITO NV",
   "scripts": {
-    "start": "ts-node src/app.ts"
+    "start": "ts-node src/app.ts",
+    "debug": "node --require ts-node/register --inspect=9229 src/app.ts"
   },
   "repository": {
     "type": "git",
