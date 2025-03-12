@@ -52,11 +52,18 @@ export function sessionEndpoint(app: Express) {
           accessGrantExpirationDate?: string;
           webId?: string;
           pods?: string[];
+          tokens?: {
+            accessToken: any;
+            idToken: any;
+          }
         } = { isLoggedIn: false };
 
         if (res.locals.session) {
           sessionInformation.isLoggedIn = res.locals.session.info.isLoggedIn;
-          sessionInformation.expirationDate = new Date(res.locals.session.info.expirationDate * 1000).toISOString();
+
+          if(res.locals.session.info.expirationDate) {
+            sessionInformation.expirationDate = new Date(res.locals.session.info.expirationDate * 1000).toISOString();
+          }
 
           if(res.locals.session.info.webId) {
             sessionInformation.webId = res.locals.session.info.webId;
@@ -76,6 +83,12 @@ export function sessionEndpoint(app: Express) {
 
         if (req.session.accessGrantExpirationDate) {
           sessionInformation.accessGrantExpirationDate = req.session.accessGrantExpirationDate;
+        }
+
+        // @ts-ignore
+        if(req.session.tokens) {
+          // @ts-ignore
+          sessionInformation.tokens = req.session.tokens;
         }
 
         res.json(sessionInformation);

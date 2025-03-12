@@ -33,6 +33,7 @@ declare global {
   var oidcService: OidcService
   var athumiService: AthumiService
   var frontendUrl: URL
+  var frontendLoginUrl: URL
   var backendUrl: URL
   var solidStorage: IStorage
 }
@@ -52,6 +53,7 @@ export function initializeGlobal() {
 
   try {
     globalThis.frontendUrl = new URL(process.env.FRONTEND_URL!);
+    globalThis.frontendLoginUrl = new URL(`${process.env.FRONTEND_URL!}${process.env.FRONTEND_LOGIN_PATH}`);
     globalThis.backendUrl = new URL(`${process.env.PROTOCOL}://${process.env.HOST}:${process.env.PORT}`);
   } catch (error) {
     throw new Error('Not a valid URL found forming back-end and front-end URLs');

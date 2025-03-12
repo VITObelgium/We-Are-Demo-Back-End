@@ -32,12 +32,21 @@ export function authenticationEndpoint(app: Express) {
   app.get("/login", (req, res, next) => {
     log.debug(`Endpoint GET /login called.`);
     next();
-  }, async (req, res, next) => {
+  }, getSessionOptional.bind({storage: globalThis.solidStorage}), async (req, res, next) => {
     try {
-      const session = new Session( {storage: globalThis.solidStorage!, keepAlive: false});
-      req.session.solidSid = session.info.sessionId;
+      let session = res.locals.session;
 
-      if (req.query.redirectUrl) req.session.redirectUrl = (new URL(req.query.redirectUrl as string)).href;
+      if(session?.info.isLoggedIn)
+        await session.logout({logoutType: 'app'});
+
+      if (!session)
+        session = new Session( {storage: globalThis.solidStorage!, keepAlive: false});
+
+      if(!req.session.solidSid)
+        req.session.solidSid = session.info.sessionId;
+
+      if (req.query.redirectUrl)
+        req.session.redirectUrl = (new URL(req.query.redirectUrl as string)).href;
 
       await globalThis.oidcService.login(session, (url: string) => {
         // Todo: workaround for adding scopes to OAuth flow, should be provided by Inrupt SDK.
@@ -52,6 +61,11 @@ export function authenticationEndpoint(app: Express) {
         if(req.query.switchIdentity) {
           // Static string to switch identity, see https://vlaamseoverheid.atlassian.net/wiki/spaces/IKPubliek/pages/6336381158/Wisselen+van+account+doelgroepen
           loginUrl.searchParams.set('login_hint', 'eyJzd2l0Y2hfaWQiOiB0cnVlfQ==');
+        }
+
+        if(req.query.saveTokens) {
+          // @ts-ignore
+          req.session.workaroundActive = "save_tokens";
         }
 
         res.redirect(loginUrl.href);
@@ -190,6 +204,18 @@ export function authenticationEndpoint(app: Express) {
           });
         } else if(req.session.workaroundActive == 'delete_pod') {
 
+        } else if(req.session.workaroundActive == 'save_tokens') {
+          delete req.session.workaroundActive;
+          const solidSession = JSON.parse((await globalThis.solidStorage.get(`solidClientAuthenticationUser:${req.session.solidSid}`))!);
+          const codeVerifier = solidSession.codeVerifier
+          const data = await globalThis.oidcService.getToken(req.query.code as string, codeVerifier, req.query.state as string)
+          const idToken = data.id_token;
+          const accessToken = data.access_token;
+          // @ts-ignore
+          req.session.tokens = {idToken, accessToken};
+          const redirectUrl = new URL(globalThis.frontendLoginUrl.href);
+          redirectUrl.searchParams.set('save_tokens', 'success');
+          res.redirect(redirectUrl.href);
         }
       } catch (error) {
         // A general error catcher which will, in turn, call the ExpressJS error handler.
