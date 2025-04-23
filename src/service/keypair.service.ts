@@ -16,27 +16,20 @@ export async function getKeyPair(): Promise<KeyPair> {
 }
 
 async function createKeyPairInternal(): Promise<KeyPair> {
-
-    let keyPair
-    let alg
-    let crv
-    alg = 'RS512';
-    const { publicKey, privateKey } = await generateKeyPair(alg, {
+    const algorithm = 'RS512';
+    const { publicKey, privateKey } = await generateKeyPair(algorithm, {
         modulusLength: 2048,
         extractable: true,
     });
 
-    const jwk = await exportJWK(publicKey)
-    const jwkPrivate = await exportJWK(privateKey)
-    jwk.alg = alg
-    if (crv) {
-        jwk.crv = crv
-    }
-    jwk.kid = await calculateJwkThumbprint(jwk)
+    const publicJwk = await exportJWK(publicKey)
+    const privateJwk = await exportJWK(privateKey)
+    publicJwk.alg = algorithm
+    publicJwk.kid = await calculateJwkThumbprint(publicJwk)
 
-    jwkPrivate.alg = alg
+    privateJwk.alg = algorithm
     return {
-        publicKey: jwk,
-        privateKey: jwkPrivate
+        publicKey: publicJwk,
+        privateKey: privateJwk
     }
 }
