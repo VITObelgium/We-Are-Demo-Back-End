@@ -39,11 +39,10 @@ export function authenticationEndpoint(app: Express) {
       if(session?.info.isLoggedIn)
         await session.logout({logoutType: 'app'});
 
-      if (!session)
+      if (!session) {
         session = new Session( {storage: globalThis.solidStorage!, keepAlive: false});
-
-      if(!req.session.solidSid)
         req.session.solidSid = session.info.sessionId;
+      }
 
       if (req.query.redirectUrl)
         req.session.redirectUrl = (new URL(req.query.redirectUrl as string)).href;
