@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://git.vito.be/scm/sdwa/weare-backend-template.git"
+    "url": "git+https://github.com/VITObelgium/We-Are-Demo-Back-End.git"
   },
   "dependencies": {
     "@inrupt/solid-client": "^2.1.2",
