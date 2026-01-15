@@ -26,6 +26,8 @@ import {sessionEndpoint} from "./endpoint/session-endpoint";
 import vcEndpoint from "./endpoint/vc-endpoint";
 import {initializeEnvironment} from "./validate/environment-validate";
 import path from "path";
+import {oidcEndpoint} from "./endpoint/oidc-endpoint";
+import {htiEndpoint} from "./endpoint/hti-endpoints";
 
 // Load environment variables from the `.env` file into `process.env`
 dotEnv.config();
@@ -106,6 +108,8 @@ app.use(bodyParser.raw());
  * These functions define routes and their handlers for the application.
  */
 authenticationEndpoint(app);
+oidcEndpoint(app)
+htiEndpoint(app)
 podEndpoint(app);
 sessionEndpoint(app);
 vcEndpoint(app);
