@@ -11,14 +11,23 @@ This is the We Are Demo Back-End project to showcase an example implementation o
 
 Run `npm install` to install all dependencies for the project.
 
+## Using the local We Are libraries
+
+This project consumes ```We Are Core``` and ```We Are Expressjs``` from the sibling repositories via `npm link`.
+Build and register both libraries once, then link them into this project:
+```
+cd ../We-Are-Core && npm install && npm run build && npm link
+cd ../We-Are-ExpressJS && npm install && npm link @vito-nv/weare-core && npm run build && npm link
+cd ../We-Are-Demo-Back-End && npm link @vito-nv/weare-core @vito-nv/weare-expressjs
+```
+Rebuild the library (`npm run build`) after changing its sources; the link picks up the new `dist` automatically.
+
 Before running this application, please copy the .env.example file to a new .env file. We Are using DotEnv to provide the environment variables for the application to run.  
 Acquire your credentials from your VITO NV - We Are contact person. Environment variables you need to acquire are:
 - WEARE_OIDC_CLIENT_ID
 - WEARE_OIDC_CLIENT_SECRET
-- CITIZEN_OIDC_CLIENT_ID
-- CITIZEN_OIDC_CLIENT_SECRET
 
-Before retrieving these credentials you will need to enroll with both We Are & ACM/IDM.
+Before retrieving these credentials you will need to enroll with We Are.
 
 After you have acquired the credentials and saving them to the .env file, you can run the application with the following command:
 ```

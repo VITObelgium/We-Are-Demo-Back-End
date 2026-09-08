@@ -27,7 +27,6 @@ import {InMemoryStorage} from "@inrupt/solid-client-authn-core";
 declare global {
   var weAreOidcConfig: OidcConfig
   var essVcConfig: VcConfig
-  var citizenOidcConfig: OidcConfig
   var podService: PodService
   var vcService: VcService
   var oidcService: OidcService
@@ -36,20 +35,11 @@ declare global {
   var frontendLoginUrl: URL
   var backendUrl: URL
   var solidStorage: IStorage
+  var sessionCookieName: string
 }
 
 export function initializeGlobal() {
-  globalThis.weAreOidcConfig = new OidcConfig(
-    new URL(process.env.WEARE_OIDC_URL!),
-    process.env.WEARE_OIDC_CLIENT_ID!,
-    process.env.WEARE_OIDC_CLIENT_SECRET!,
-    {tokenPath: process.env.WEARE_OIDC_TOKEN_PATH!}
-  );
-
-  globalThis.essVcConfig = new VcConfig(
-    new URL(process.env.ESS_URL!),
-    {issuePath: process.env.VC_ISSUE_PATH!, derivePath: process.env.VC_DERIVE_PATH!}
-  );
+  globalThis.essVcConfig = new VcConfig(new URL(process.env.ESS_URL!));
 
   try {
     globalThis.frontendUrl = new URL(process.env.FRONTEND_URL!);
@@ -61,17 +51,21 @@ export function initializeGlobal() {
 
   const oidcRedirectUrl = globalThis.backendUrl
   oidcRedirectUrl.pathname = '/oidc-redirect'
-  globalThis.citizenOidcConfig = new OidcConfig(
-    new URL(process.env.CITIZEN_OIDC_URL!),
-    process.env.CITIZEN_OIDC_CLIENT_ID!,
-    process.env.CITIZEN_OIDC_CLIENT_SECRET!,
-    {clientName: process.env.CITIZEN_OIDC_CLIENT_NAME!, loginPath: process.env.CITIZEN_OIDC_LOGIN_PATH!, tokenPath: process.env.CITIZEN_OIDC_TOKEN_PATH!,redirectEndpoint: oidcRedirectUrl}
+  globalThis.weAreOidcConfig = new OidcConfig(
+    new URL(process.env.WEARE_OIDC_URL!),
+    process.env.WEARE_OIDC_CLIENT_ID!,
+    process.env.WEARE_OIDC_CLIENT_SECRET!,
+    {
+      clientName: process.env.WEARE_OIDC_CLIENT_NAME!,
+      redirectEndpoint: oidcRedirectUrl
+    }
   );
 
   globalThis.podService = new PodService(globalThis.weAreOidcConfig);
   globalThis.vcService = new VcService(globalThis.weAreOidcConfig, globalThis.essVcConfig);
-  globalThis.oidcService = new OidcService(globalThis.citizenOidcConfig);
+  globalThis.oidcService = new OidcService(globalThis.weAreOidcConfig);
   globalThis.athumiService = new AthumiService(new AthumiConfig(new URL(process.env.ATHUMI_POD_PLATFORM_URL!), process.env.ATHUMI_POD_PLATFORM_WEB_ID_PATH!));
 
   globalThis.solidStorage = new InMemoryStorage();
+  globalThis.sessionCookieName = "weare-demo-session";
 }

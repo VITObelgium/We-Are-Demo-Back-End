@@ -52,11 +52,10 @@ export function authenticationEndpoint(app: Express) {
         // Todo: workaround for adding scopes to OAuth flow, should be provided by Inrupt SDK.
         const loginUrl = new URL(url);
         let scope = loginUrl.searchParams.get('scope');
-        if (scope)
-          scope += " rrn";
-        else
-          scope = "rrn";
+        if (!scope)
+          scope = "";
         loginUrl.searchParams.set('scope', scope);
+        loginUrl.searchParams.set('prompt', 'none');
 
         if(req.query.switchIdentity) {
           // Static string to switch identity, see https://vlaamseoverheid.atlassian.net/wiki/spaces/IKPubliek/pages/6336381158/Wisselen+van+account+doelgroepen
@@ -100,6 +99,8 @@ export function authenticationEndpoint(app: Express) {
         delete req.session.pods;
         delete req.session.locale;
         delete req.session.workaroundActive;
+
+        res.clearCookie(globalThis.sessionCookieName);
 
         const successUrl = new URL(globalThis.frontendUrl);
         successUrl.searchParams.set("logout", "success");

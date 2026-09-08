@@ -13,5 +13,13 @@
     "removeComments": true,
     "lib": ["es2022", "dom"],
     "moduleResolution": "node",
+    // The We Are libraries are consumed through 'npm link'. Their nested node_modules would
+    // otherwise provide a second copy of these typings, breaking the express-session
+    // SessionData augmentation of @vito-nv/weare-expressjs.
+    "baseUrl": ".",
+    "paths": {
+      "express-session": ["node_modules/@types/express-session"],
+      "express": ["node_modules/@types/express"]
+    },
   }
 }

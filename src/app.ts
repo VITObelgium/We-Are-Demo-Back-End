@@ -61,7 +61,7 @@ initializeGlobal();
  */
 app.use(
   session({
-    name: "weare-demo-session",
+    name: globalThis.sessionCookieName,
     resave: false,
     saveUninitialized: false,
     secret: "wearedemobackendcookiesecret",
