@@ -149,16 +149,13 @@ export function authenticationEndpoint(app: Express) {
               return;
             }
 
-            if(req.session.redirectUrl) {
-              const successUrl = new URL(req.session.redirectUrl);
-              successUrl.searchParams.set('login', 'success');
-              res.redirect(successUrl.href);
-              delete req.session.redirectUrl;
-            } else {
-              const successUrl = new URL(globalThis.frontendUrl)
-              successUrl.searchParams.set('login', 'success');
-              res.redirect(successUrl.href);
-            }
+            // Redirect the user to the frontend
+            let redirectUrl = globalThis.frontendUrl.href;
+            if (req.session.redirectUrl && req.session.redirectUrl.toString().startsWith(globalThis.frontendUrl.href)) redirectUrl = req.session.redirectUrl;
+            const successUrl = new URL(redirectUrl);
+            successUrl.searchParams.set('login', 'success');
+            res.redirect(successUrl.href);
+            delete req.session.redirectUrl;
             return;
           } catch (error: any) {
             if (error.message.startsWith("The token has no 'webid' claim")) {
