@@ -12,6 +12,7 @@ import { Express } from "express";
 import log from "loglevel";
 import {getPodsOptional, getSessionOptional} from "@vito-nv/weare-expressjs";
 import { AccessGrant } from "@inrupt/solid-client-access-grants";
+import { getPodUrlAll } from "@inrupt/solid-client";
 
 export function sessionEndpoint(app: Express) {
 
@@ -47,11 +48,24 @@ export function sessionEndpoint(app: Express) {
       try {
         const sessionInformation: {
           isLoggedIn: boolean;
+          authenticationMethod?: 'oidc' | 'hti';
+          htiTokenVerified?: boolean;
           expirationDate?: string;
           accessGrantId?: string;
           accessGrantExpirationDate?: string;
           webId?: string;
           pods?: string[];
+          clientId?: string;
+          usingCustomCredentials?: boolean;
+          steps?: {
+            oidcConfiguration?: unknown;
+            clientAuthentication?: unknown;
+            vcConfiguration?: unknown;
+            accessRequestId?: string;
+            umaConfiguration?: unknown;
+            umaTicket?: unknown;
+            umaAccessToken?: unknown;
+          };
           tokens?: {
             accessToken: any;
             idToken: any;
@@ -60,6 +74,10 @@ export function sessionEndpoint(app: Express) {
 
         if (res.locals.session) {
           sessionInformation.isLoggedIn = res.locals.session.info.isLoggedIn;
+
+          if(res.locals.session.info.isLoggedIn) {
+            sessionInformation.authenticationMethod = 'oidc';
+          }
 
           if(res.locals.session.info.expirationDate) {
             sessionInformation.expirationDate = new Date(res.locals.session.info.expirationDate * 1000).toISOString();
@@ -73,6 +91,36 @@ export function sessionEndpoint(app: Express) {
             sessionInformation.pods = res.locals.pods;
           }
         }
+
+        // When the citizen's Web ID was obtained via the HTI flow, expose it as an authenticated context.
+        if (!sessionInformation.isLoggedIn && req.session.htiWebId) {
+          sessionInformation.isLoggedIn = true;
+          sessionInformation.authenticationMethod = 'hti';
+          sessionInformation.webId = req.session.htiWebId;
+          sessionInformation.htiTokenVerified = !!req.session.htiTokenVerified;
+
+          try {
+            sessionInformation.pods = await getPodUrlAll(req.session.htiWebId);
+          } catch (error) {
+            log.debug(`[GET /session-information] Could not fetch pods for HTI Web ID [${req.session.htiWebId}]: ${(error as Error).message}`);
+          }
+        }
+
+        sessionInformation.usingCustomCredentials = !!(req.session.clientId && req.session.clientSecret);
+        if (sessionInformation.usingCustomCredentials) {
+          sessionInformation.clientId = req.session.clientId;
+        }
+
+        // Summaries of the executed flow steps (mirroring the Postman collection).
+        sessionInformation.steps = {
+          oidcConfiguration: req.session.oidcConfiguration,
+          clientAuthentication: req.session.clientAuthentication,
+          vcConfiguration: req.session.vcConfiguration,
+          accessRequestId: req.session.accessRequestId,
+          umaConfiguration: req.session.umaConfiguration,
+          umaTicket: req.session.umaTicket,
+          umaAccessToken: req.session.umaAccessToken
+        };
 
         if(req.session.accessGrant) {
           const accessGrant = JSON.parse(req.session.accessGrant!) as AccessGrant;

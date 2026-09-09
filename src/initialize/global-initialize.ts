@@ -26,7 +26,7 @@ import {InMemoryStorage} from "@inrupt/solid-client-authn-core";
 
 declare global {
   var weAreOidcConfig: OidcConfig
-  var essVcConfig: VcConfig
+  var weAreVcConfig: VcConfig
   var podService: PodService
   var vcService: VcService
   var oidcService: OidcService
@@ -39,7 +39,7 @@ declare global {
 }
 
 export function initializeGlobal() {
-  globalThis.essVcConfig = new VcConfig(new URL(process.env.ESS_URL!));
+  globalThis.weAreVcConfig = new VcConfig(new URL(process.env.WEARE_VC_SERVICE!));
 
   try {
     globalThis.frontendUrl = new URL(process.env.FRONTEND_URL!);
@@ -62,7 +62,7 @@ export function initializeGlobal() {
   );
 
   globalThis.podService = new PodService(globalThis.weAreOidcConfig);
-  globalThis.vcService = new VcService(globalThis.weAreOidcConfig, globalThis.essVcConfig);
+  globalThis.vcService = new VcService(globalThis.weAreOidcConfig, globalThis.weAreVcConfig);
   globalThis.oidcService = new OidcService(globalThis.weAreOidcConfig);
   globalThis.athumiService = new AthumiService(new AthumiConfig(new URL(process.env.ATHUMI_POD_PLATFORM_URL!), process.env.ATHUMI_POD_PLATFORM_WEB_ID_PATH!));
 

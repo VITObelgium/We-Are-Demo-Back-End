@@ -12,7 +12,8 @@
 import {Session} from "@inrupt/solid-client-authn-node";
 import { Express } from "express";
 import log from "loglevel";
-import { getSession, getSessionOptional } from "@vito-nv/weare-expressjs";
+import { getSessionOptional } from "@vito-nv/weare-expressjs";
+import { getSessionServices } from "../helper/session-services";
 
 export function authenticationEndpoint(app: Express) {
 
@@ -48,7 +49,7 @@ export function authenticationEndpoint(app: Express) {
       if (req.query.redirectUrl)
         req.session.redirectUrl = (new URL(req.query.redirectUrl as string)).href;
 
-      await globalThis.oidcService.login(session, (url: string) => {
+      await getSessionServices(req).oidcService.login(session, (url: string) => {
         // Todo: workaround for adding scopes to OAuth flow, should be provided by Inrupt SDK.
         const loginUrl = new URL(url);
         let scope = loginUrl.searchParams.get('scope');
@@ -89,16 +90,34 @@ export function authenticationEndpoint(app: Express) {
   app.get("/logout", (req, res, next) => {
       log.debug(`Endpoint GET /logout called.`);
       next();
-    }, getSession.bind({storage: globalThis.solidStorage}), async (req, res, next) => {
+    }, getSessionOptional.bind({storage: globalThis.solidStorage}), async (req, res, next) => {
       try {
-        log.debug(`[GET /logout] Log out for Web ID [${res.locals.session.info.webId}]`);
-        await res.locals.session.logout();
+        if (res.locals.session?.info?.isLoggedIn) {
+          log.debug(`[GET /logout] Log out for Web ID [${res.locals.session.info.webId}]`);
+          await res.locals.session.logout();
+        }
 
         delete req.session.accessGrant;
         delete req.session.accessGrantExpirationDate;
         delete req.session.pods;
         delete req.session.locale;
         delete req.session.workaroundActive;
+        delete req.session.htiWebId;
+        delete req.session.htiToken;
+        delete req.session.htiTokenVerified;
+        delete req.session.htiLaunchState;
+        delete req.session.oidcConfiguration;
+        delete req.session.clientAuthentication;
+        delete req.session.clientAccessToken;
+        delete req.session.clientIdToken;
+        delete req.session.vcConfiguration;
+        delete req.session.accessRequestId;
+        delete req.session.umaConfiguration;
+        delete req.session.umaTicket;
+        delete req.session.umaTicketValue;
+        delete req.session.umaAccessToken;
+        delete req.session.clientId;
+        delete req.session.clientSecret;
 
         res.clearCookie(globalThis.sessionCookieName);
 
@@ -160,7 +179,7 @@ export function authenticationEndpoint(app: Express) {
           } catch (error: any) {
             if (error.message.startsWith("The token has no 'webid' claim")) {
               req.session.workaroundActive = "create_web_id";
-              await globalThis.oidcService.login(res.locals.session!, (url: string) => {
+              await getSessionServices(req).oidcService.login(res.locals.session!, (url: string) => {
                 // Todo: workaround for adding scopes to OAuth flow, should be provided by Inrupt SDK.
                 const loginUrl = new URL(url);
                 let scope = loginUrl.searchParams.get('scope');
@@ -180,11 +199,11 @@ export function authenticationEndpoint(app: Express) {
         } else if (req.session.workaroundActive === "create_web_id") {
           const solidSession = JSON.parse((await globalThis.solidStorage.get(`solidClientAuthenticationUser:${req.session.solidSid}`))!);
           const codeVerifier = solidSession.codeVerifier
-          const data = await globalThis.oidcService.getToken(req.query.code as string, codeVerifier, req.query.state as string)
+          const data = await getSessionServices(req).oidcService.getToken(req.query.code as string, codeVerifier, req.query.state as string)
           const idToken = data.id_token;
           await globalThis.athumiService.provisionWebId(idToken);
           delete req.session.workaroundActive;
-          await globalThis.oidcService.login(res.locals.session!, (url: string) => {
+          await getSessionServices(req).oidcService.login(res.locals.session!, (url: string) => {
             // In this case also switch identity to refresh the session to include the provided web id.
             // Todo: workaround for adding scopes to OAuth flow, should be provided by Inrupt SDK.
             const loginUrl =  new URL(url);
@@ -206,7 +225,7 @@ export function authenticationEndpoint(app: Express) {
           delete req.session.workaroundActive;
           const solidSession = JSON.parse((await globalThis.solidStorage.get(`solidClientAuthenticationUser:${req.session.solidSid}`))!);
           const codeVerifier = solidSession.codeVerifier
-          const data = await globalThis.oidcService.getToken(req.query.code as string, codeVerifier, req.query.state as string)
+          const data = await getSessionServices(req).oidcService.getToken(req.query.code as string, codeVerifier, req.query.state as string)
           const idToken = data.id_token;
           const accessToken = data.access_token;
           // @ts-ignore

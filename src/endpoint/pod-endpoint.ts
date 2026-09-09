@@ -14,10 +14,10 @@ import { Express } from "express";
 import log from "loglevel";
 import {
   validateAccessGrant,
-  getSession,
   getResource,
   writeFile, getFile, writeResource
 } from "@vito-nv/weare-expressjs"
+import {getAuthenticatedWebId, getSessionServices} from "../helper/session-services";
 
 export default function podEndpoint(app: Express) {
 
@@ -39,7 +39,7 @@ export default function podEndpoint(app: Express) {
   app.get("/read", async (req, res, next) => {
     log.debug("Endpoint '/read' called");
     next();
-  }, getSession.bind({ storage: globalThis.solidStorage }), validateAccessGrant, getResource.bind({ resourceUrlParameterKey: "resourceUrl", podService: globalThis.podService }), async (req, res, next) => {
+  }, getAuthenticatedWebId, validateAccessGrant, (req, res, next) => getResource.call({ resourceUrlParameterKey: "resourceUrl", podService: getSessionServices(req).podService }, req, res, next), async (req, res, next) => {
     const turtle = await solidDatasetAsTurtle(res.locals.solidDataset);
     res.send(turtle);
   });
@@ -47,7 +47,7 @@ export default function podEndpoint(app: Express) {
   app.get("/read-file", async (req, res, next) => {
     log.debug("Endpoint '/read' called");
     next();
-  }, getSession.bind({ storage: globalThis.solidStorage }), validateAccessGrant, getFile.bind({ fileUrlParameterKey: "fileUrl", podService: globalThis.podService }), async (req, res, next) => {
+  }, getAuthenticatedWebId, validateAccessGrant, (req, res, next) => getFile.call({ fileUrlParameterKey: "fileUrl", podService: getSessionServices(req).podService }, req, res, next), async (req, res, next) => {
     res.send(res.locals.payload);
   });
 
@@ -70,7 +70,7 @@ export default function podEndpoint(app: Express) {
   app.post("/write", async (req, res, next) => {
     log.debug("Endpoint '/write' called");
     next();
-  }, getSession.bind({ storage: globalThis.solidStorage }), validateAccessGrant, writeResource.bind({ resourceUrlParameterKey: "resourceUrl", podService: globalThis.podService! }), async (req, res, next) => {
+  }, getAuthenticatedWebId, validateAccessGrant, (req, res, next) => writeResource.call({ resourceUrlParameterKey: "resourceUrl", podService: getSessionServices(req).podService }, req, res, next), async (req, res, next) => {
     res.send("Resource created");
   });
 
@@ -78,7 +78,7 @@ export default function podEndpoint(app: Express) {
   app.post("/write-file", async (req, res, next) => {
     log.debug("Endpoint '/write-file' called");
     next();
-  }, getSession.bind({ storage: globalThis.solidStorage }), validateAccessGrant, writeFile.bind({ fileUrlParameterKey: "fileUrl", podService: globalThis.podService! }), async (req, res, next) => {
+  }, getAuthenticatedWebId, validateAccessGrant, (req, res, next) => writeFile.call({ fileUrlParameterKey: "fileUrl", podService: getSessionServices(req).podService }, req, res, next), async (req, res, next) => {
     res.send("File created");
   });
 

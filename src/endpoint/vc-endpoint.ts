@@ -13,18 +13,23 @@
 
 import {Express} from "express";
 import log from "loglevel";
-import { getSession, getPods } from "@vito-nv/weare-expressjs";
 import httpContext from "express-http-context";
+import {getAuthenticatedWebId, getSessionServices} from "../helper/session-services";
 
 export default function vcEndpoint(app: Express) {
     app.post('/access-request', (req, res, next) => {
       log.debug(`Calling POST /access-request`);
       next();
-    }, getSession.bind({storage: globalThis.solidStorage}), getPods, async (req, res, next) => {
+    }, getAuthenticatedWebId, async (req, res, next) => {
       try {
-        const accessRequest = await globalThis.vcService.issueAccessRequest(req.body.data, req.body.webId, req.body.purpose, new Date(req.body.expirationDate), req.body.access, httpContext.get('correlationId'))
+        const accessRequest = await getSessionServices(req).vcService.issueAccessRequest(req.body.data, req.body.webId, req.body.purpose, new Date(req.body.expirationDate), req.body.access, httpContext.get('correlationId'))
 
-        res.status(201).send(accessRequest);
+          // Keep the access request ID on the session so the consent step can be shown separately.
+          if (accessRequest?.id) {
+            req.session.accessRequestId = accessRequest.id;
+          }
+
+          res.status(201).send(accessRequest);
       } catch(error) {
         // A general error catcher which will, in turn, call the ExpressJS error handler.
         next(error);
@@ -34,10 +39,10 @@ export default function vcEndpoint(app: Express) {
   app.post('/access-grant', (req, res, next) => {
     log.debug(`Calling GET /access-grant`);
     next();
-  }, getSession.bind({storage: globalThis.solidStorage}), async (req, res, next) => {
+  }, getAuthenticatedWebId, async (req, res, next) => {
     try {
       const accessGrantId = req.body.accessGrantId as string;
-      const accessGrant = await globalThis.vcService.fetchAccessGrant(accessGrantId, httpContext.get('correlationId'))
+      const accessGrant = await getSessionServices(req).vcService.fetchAccessGrant(accessGrantId, httpContext.get('correlationId'))
       req.session.accessGrant = JSON.stringify(accessGrant);
       req.session.accessGrantExpirationDate = new Date(accessGrant.expirationDate!).toISOString();
 
@@ -51,9 +56,9 @@ export default function vcEndpoint(app: Express) {
   app.get('/access-grant', (req, res, next) => {
     log.debug(`Calling GET /access-grant`);
     next();
-  }, getSession.bind({storage: globalThis.solidStorage}), async (req, res, next) => {
+  }, getAuthenticatedWebId, async (req, res, next) => {
     try {
-      const accessGrants = await globalThis.vcService.fetchAccessGrants(httpContext.get('correlationId'), {ownerWebId: res.locals.session.info.webId});
+      const accessGrants = await getSessionServices(req).vcService.fetchAccessGrants(httpContext.get('correlationId'), {ownerWebId: res.locals.webId});
       res.status(200).send(JSON.stringify(accessGrants));
     } catch(error) {
       // A general error catcher which will, in turn, call the ExpressJS error handler.

@@ -4,7 +4,6 @@
  * `body-parser`: Middleware to parse incoming request bodies.
  * `authenticationEndpoint`: Custom module to handle authentication logic.
  * `podEndpoint`: Custom module to handle pod-specific logic.
- * `overrideSessionData`: Function from an external package to modify session data handling.
  * `initializeGlobal`: Custom function to initialize global settings.
  * `express-session`: Middleware for session management.
  * `dotenv`: Loads environment variables from a `.env` file.
@@ -18,12 +17,15 @@ import express, { Request as ExpressRequest, Response as ExpressResponse } from 
 import bodyParser from "body-parser";
 import { authenticationEndpoint } from "./endpoint/authentication-endpoint";
 import podEndpoint from "./endpoint/pod-endpoint";
-import { overrideSessionData } from "@vito-nv/weare-expressjs";
 import { initializeGlobal } from "./initialize/global-initialize";
 import session from "express-session";
 import dotEnv from "dotenv";
 import {sessionEndpoint} from "./endpoint/session-endpoint";
 import vcEndpoint from "./endpoint/vc-endpoint";
+import {credentialsEndpoint} from "./endpoint/credentials-endpoint";
+import {htiEndpoint} from "./endpoint/hti-endpoint";
+import {flowEndpoint} from "./endpoint/flow-endpoint";
+import {extendSessionData} from "./session/session-data";
 import {initializeEnvironment} from "./validate/environment-validate";
 import path from "path";
 
@@ -37,7 +39,7 @@ const cors = require("cors");
 /**
  * Call function to customize the express-session
  */
-overrideSessionData();
+extendSessionData();
 
 /**
  * Helper function to validate that all necessary environment variables are set.
@@ -109,6 +111,9 @@ authenticationEndpoint(app);
 podEndpoint(app);
 sessionEndpoint(app);
 vcEndpoint(app);
+credentialsEndpoint(app);
+htiEndpoint(app);
+flowEndpoint(app);
 
 /**
  * Root endpoint that responds with a status message.
