@@ -6,7 +6,7 @@
   "author": "VITO NV",
   "scripts": {
     "start": "ts-node src/app.ts",
-    "debug": "node --require ts-node/register --inspect=9229 src/app.ts"
+    "debug": "tsx watch --inspect=9229 --enable-source-maps src/app.ts"
   },
   "repository": {
     "type": "git",
