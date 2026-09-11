@@ -71,7 +71,7 @@ export interface CustomClientCredentials {
 
 declare module "express-session" {
     interface SessionData {
-        /** The We Are platform environment (TST/ACC/PRD) selected for this session, see `/client-credentials`. */
+        /** The We Are platform environment (DEV/TST/ACC/PRD) selected for this session, see `/client-credentials`. */
         weAreEnvironment?: WeAreEnvironment;
         /** The configured client credential index selected for this session, see `/client-credentials`. */
         clientIndex?: number;

@@ -5,7 +5,7 @@
  * By default the back-end uses the environment and client credentials configured in the
  * `.env` file (`WEARE_ENVIRONMENT` and the lowest-indexed `WEARE_OIDC_CLIENT_ID_<index>_<env>`).
  * These endpoints allow a caller to:
- * - switch the active We Are environment (TST/ACC/PRD) and select one of the configured client
+ * - switch the active We Are environment (DEV/TST/ACC/PRD) and select one of the configured client
  *   credential pairs for it, or
  * - override the client ID/secret entirely with custom values (for testing credentials that
  *   are not configured in `.env`).
@@ -79,7 +79,7 @@ export function credentialsEndpoint(app: Express) {
    *   entered for that environment, without having to re-type the client secret.
    *
    * @route {PUT} /client-credentials
-   * @body {string} [environment] - One of TST, ACC, PRD. Defaults to the currently active environment.
+   * @body {string} [environment] - One of DEV, TST, ACC, PRD. Defaults to the currently active environment.
    * @body {number} [clientIndex] - The configured client credential index to use for the environment.
    * @body {string} [clientId] - A custom client ID to use for this session, instead of `clientIndex`.
    * @body {string} [clientSecret] - A custom client secret to use for this session, instead of `clientIndex`.

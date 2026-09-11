@@ -1,7 +1,7 @@
 /**
  * Helpers to resolve the We Are services for the current session.
  *
- * The session can select a We Are environment (TST/ACC/PRD) and either a configured client
+ * The session can select a We Are environment (DEV/TST/ACC/PRD) and either a configured client
  * credential index or a fully custom client ID/secret pair (via the `/client-credentials`
  * endpoint). New service instances are built for that environment/client combination.
  * Otherwise the default (global, startup-configured) services are returned.

@@ -1,17 +1,17 @@
 /**
- * Helpers to resolve the We Are platform environment (test/acceptance/production) and the
- * client credential pairs configured for it.
+ * Helpers to resolve the We Are platform environment (development/test/acceptance/production)
+ * and the client credential pairs configured for it.
  *
- * Environment-scoped configuration values are stored in `process.env` with a `_TST`, `_ACC`
- * or `_PRD` suffix (e.g. `WEARE_OIDC_URL_ACC`). Client credentials additionally support an
+ * Environment-scoped configuration values are stored in `process.env` with a `_DEV`, `_TST`,
+ * `_ACC` or `_PRD` suffix (e.g. `WEARE_OIDC_URL_ACC`). Client credentials additionally support an
  * enumeration index so multiple pairs can be configured per environment
  * (e.g. `WEARE_OIDC_CLIENT_ID_1_ACC`, `WEARE_OIDC_CLIENT_ID_2_ACC`, ...).
  */
 
 /** The We Are platform environments supported by this application. */
-export type WeAreEnvironment = 'TST' | 'ACC' | 'PRD';
+export type WeAreEnvironment = 'DEV' | 'TST' | 'ACC' | 'PRD';
 
-export const WEARE_ENVIRONMENTS: WeAreEnvironment[] = ['TST', 'ACC', 'PRD'];
+export const WEARE_ENVIRONMENTS: WeAreEnvironment[] = ['DEV', 'TST', 'ACC', 'PRD'];
 
 /** A configured client credential pair, without exposing the secret. */
 export interface ClientCredentialOption {
@@ -35,7 +35,7 @@ function isWeAreEnvironment(value: string | undefined): value is WeAreEnvironmen
  * Returns the environment that is active by default at startup, as configured via the
  * `WEARE_ENVIRONMENT` environment variable.
  *
- * @throws {Error} When `WEARE_ENVIRONMENT` is missing or not one of `TST`, `ACC`, `PRD`.
+ * @throws {Error} When `WEARE_ENVIRONMENT` is missing or not one of `DEV`, `TST`, `ACC`, `PRD`.
  */
 export function getDefaultEnvironment(): WeAreEnvironment {
     const configured = process.env.WEARE_ENVIRONMENT;
