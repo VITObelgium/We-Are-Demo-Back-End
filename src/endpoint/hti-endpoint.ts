@@ -82,7 +82,7 @@ async function resolveJwksUri(issuer: string): Promise<string> {
  * URI regex, so any path on this back-end's own host/port is an accepted redirect target.
  */
 function buildCaptureEndpoint(): URL {
-  const captureEndpoint = new URL(`${process.env.PROTOCOL}://${process.env.HOST}:${process.env.PORT}`);
+  const captureEndpoint = new URL(globalThis.backendUrl.href);
   captureEndpoint.pathname = "/hti/capture";
   return captureEndpoint;
 }
@@ -154,7 +154,7 @@ export function htiEndpoint(app: Express) {
     next();
   }, async (req, res, next) => {
     try {
-      const {oidcConfig} = getSessionServices(req);
+      const {oidcConfig, pimsUrl} = getSessionServices(req);
       const clientId = oidcConfig.clientId;
       const debug = req.query["debug"] === "true";
 
@@ -181,7 +181,7 @@ export function htiEndpoint(app: Express) {
       req.session.htiLaunchState = state;
       pendingHtiCaptures.set(state, req.sessionID);
 
-      const launchUrl = new URL(process.env.WEARE_PIMS_URL!);
+      const launchUrl = new URL(pimsUrl);
       launchUrl.pathname = "/nl/hti/launch";
       launchUrl.searchParams.set("client_id", clientId);
       launchUrl.searchParams.set("redirect_uri", buildCaptureEndpoint().href);

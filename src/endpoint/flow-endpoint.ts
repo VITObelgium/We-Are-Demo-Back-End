@@ -18,7 +18,6 @@
  */
 import {Express, Request, Response} from "express";
 import log from "loglevel";
-import {TokenService} from "@vito-nv/weare-core";
 import {getPodUrlAll} from "@inrupt/solid-client";
 import {getAuthenticatedWebId, getSessionServices} from "../helper/session-services";
 
@@ -28,6 +27,48 @@ const DEMO_RESOURCE = "book_index";
 /** Returns a short, non-sensitive preview of a secret value. */
 function preview(value: string, length: number = 32): string {
   return value.length > length ? `${value.slice(0, length)}…` : value;
+}
+
+/**
+ * Builds a human-readable reason from an unknown thrown value, so it can be reported to the
+ * front-end instead of a bare HTTP status.
+ *
+ * Walks the `cause` chain, because Node's `fetch` reports connection problems as a generic
+ * `TypeError: fetch failed` with the actual reason (DNS failure, refused connection, ...)
+ * attached as `cause`. Non-`Error` throws and errors with an empty message are handled too,
+ * so this never returns an empty string.
+ */
+function describeError(error: unknown): string {
+  const parts: string[] = [];
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+
+  while (current !== undefined && current !== null && !seen.has(current)) {
+    seen.add(current);
+
+    if (current instanceof Error) {
+      const part = current.message?.trim() || current.name;
+      if (part && !parts.includes(part)) parts.push(part);
+      current = (current as Error & { cause?: unknown }).cause;
+      continue;
+    }
+
+    if (typeof current === "string") {
+      if (current.trim() && !parts.includes(current.trim())) parts.push(current.trim());
+      break;
+    }
+
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(current) ?? String(current);
+    } catch {
+      serialized = String(current);
+    }
+    if (serialized && serialized !== "{}" && !parts.includes(serialized)) parts.push(serialized);
+    break;
+  }
+
+  return parts.length ? parts.join(": ") : "An unknown error occurred.";
 }
 
 /**
@@ -64,6 +105,18 @@ async function fetchUmaChallenge(resource: URL): Promise<{ asUri?: string, ticke
     ticket: header?.match(/ticket="([^"]+)"/)?.[1],
     header
   };
+}
+
+/**
+ * Condenses a raw (non-JSON) error response body into a single readable line: HTML error pages
+ * are reduced to their text content, so the reason stays legible in the front-end's error banner.
+ */
+function summarizeResponseBody(rawBody: string, length: number = 300): string {
+  const text = rawBody.includes("<")
+    ? rawBody.replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]*>/g, " ")
+    : rawBody;
+
+  return preview(text.replace(/\s+/g, " ").trim(), length);
 }
 
 export function flowEndpoint(app: Express) {
@@ -107,13 +160,50 @@ export function flowEndpoint(app: Express) {
   app.post("/flow/client-authentication", (req, res, next) => {
     log.debug(`Endpoint POST /flow/client-authentication called.`);
     next();
-  }, async (req, res, next) => {
+  }, async (req, res) => {
     try {
       const {oidcConfig} = getSessionServices(req);
-      const tokenResponse = await new TokenService(oidcConfig).requestAccessToken();
+      await oidcConfig.discover();
 
-      if (!tokenResponse?.access_token) {
-        res.status(502).send(`Client authentication failed: ${JSON.stringify(tokenResponse)}`);
+      if (!oidcConfig.tokenEndpoint) {
+        const reason = `No 'token_endpoint' found in the openid-configuration fetched from [${oidcConfig.discoveryEndpoint.href}].`;
+        log.debug(`[POST /flow/client-authentication] Client authentication failed: ${reason}`);
+        res.status(502).json({error: "client-authentication-failed", reason});
+        return;
+      }
+
+      // The client credentials grant is performed here rather than through TokenService, because
+      // that service parses the response as JSON unconditionally: when the provider rejects the
+      // credentials with a non-JSON error page, the actual failure is masked by a parse error.
+      const response = await fetch(oidcConfig.tokenEndpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "application/json"
+        },
+        body: new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: oidcConfig.clientId,
+          client_secret: oidcConfig.clientSecret
+        })
+      });
+
+      const rawBody = await response.text();
+      let tokenResponse: any;
+      try {
+        tokenResponse = rawBody ? JSON.parse(rawBody) : undefined;
+      } catch {
+        // The provider answered with a non-JSON body (typically an HTML error page); it is
+        // reported as-is below.
+      }
+
+      if (!response.ok || !tokenResponse?.access_token) {
+        const detail = tokenResponse?.error_description
+          || tokenResponse?.error
+          || (rawBody.trim() ? summarizeResponseBody(rawBody) : "the response body was empty");
+        const reason = `The token endpoint [${oidcConfig.tokenEndpoint.href}] responded ${response.status} ${response.statusText}: ${detail}`;
+        log.debug(`[POST /flow/client-authentication] Client authentication failed: ${reason}`);
+        res.status(502).json({error: "client-authentication-failed", reason});
         return;
       }
 
@@ -130,8 +220,9 @@ export function flowEndpoint(app: Express) {
 
       res.json(req.session.clientAuthentication);
     } catch (error) {
-      // A general error catcher which will, in turn, call the ExpressJS error handler.
-      next(error);
+      const reason = describeError(error);
+      log.debug(`[POST /flow/client-authentication] Client authentication failed: ${reason}`);
+      res.status(502).json({error: "client-authentication-failed", reason});
     }
   });
 
@@ -146,7 +237,7 @@ export function flowEndpoint(app: Express) {
     next();
   }, async (req, res, next) => {
     try {
-      const vcConfig = globalThis.weAreVcConfig;
+      const vcConfig = getSessionServices(req).vcService.vcConfig;
       await vcConfig.discover();
 
       req.session.vcConfiguration = {

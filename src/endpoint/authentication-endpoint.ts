@@ -116,8 +116,8 @@ export function authenticationEndpoint(app: Express) {
         delete req.session.umaTicket;
         delete req.session.umaTicketValue;
         delete req.session.umaAccessToken;
-        delete req.session.clientId;
-        delete req.session.clientSecret;
+        delete req.session.customCredentials;
+        delete req.session.usingCustomCredentials;
 
         res.clearCookie(globalThis.sessionCookieName);
 
@@ -201,7 +201,7 @@ export function authenticationEndpoint(app: Express) {
           const codeVerifier = solidSession.codeVerifier
           const data = await getSessionServices(req).oidcService.getToken(req.query.code as string, codeVerifier, req.query.state as string)
           const idToken = data.id_token;
-          await globalThis.athumiService.provisionWebId(idToken);
+          await getSessionServices(req).webIdService.provisionWebId(idToken);
           delete req.session.workaroundActive;
           await getSessionServices(req).oidcService.login(res.locals.session!, (url: string) => {
             // In this case also switch identity to refresh the session to include the provided web id.
@@ -228,7 +228,6 @@ export function authenticationEndpoint(app: Express) {
           const data = await getSessionServices(req).oidcService.getToken(req.query.code as string, codeVerifier, req.query.state as string)
           const idToken = data.id_token;
           const accessToken = data.access_token;
-          // @ts-ignore
           req.session.tokens = {idToken, accessToken};
           const redirectUrl = new URL(globalThis.frontendLoginUrl.href);
           redirectUrl.searchParams.set('save_tokens', 'success');

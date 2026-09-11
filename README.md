@@ -162,7 +162,7 @@ if (error.message.startsWith("The token has no 'webid' claim")) {
           const codeVerifier = solidSession.codeVerifier
           const data = await globalThis.oidcService.getToken(req.query.code as string, codeVerifier, req.query.state as string)
           const idToken = data.id_token;
-          await globalThis.athumiService.provisionWebId(idToken);
+          await globalThis.webIdService.provisionWebId(idToken);
           delete req.session.workaroundActive;
           await globalThis.oidcService.login(res.locals.session!, (url: string) => {
             // In this case also switch identity to refresh the session to include the provided web id.
@@ -192,7 +192,7 @@ Basically what happens is a new login is triggered, but the state of the session
           const codeVerifier = solidSession.codeVerifier
           const data = await globalThis.oidcService.getToken(req.query.code as string, codeVerifier, req.query.state as string)
           const idToken = data.id_token;
-          await globalThis.athumiService.provisionWebId(idToken);
+          await globalThis.webIdService.provisionWebId(idToken);
           delete req.session.workaroundActive;
           await globalThis.oidcService.login(res.locals.session!, (url: string) => {
             // In this case also switch identity to refresh the session to include the provided web id.

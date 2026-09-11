@@ -1,5 +1,6 @@
 /**
- * Defines the `/session-information` route to provide details about the user's session.
+ * Defines the `/session-information` route to provide details about the user's session, and
+ * the `/session/reset` route to reset the flow-related session data.
  *
  * The `sessionEndpoint` function sets up a single endpoint to return information about the current
  * session, including whether the user is logged in, the session expiration date, WebID, pods, and
@@ -13,6 +14,9 @@ import log from "loglevel";
 import {getPodsOptional, getSessionOptional} from "@vito-nv/weare-expressjs";
 import { AccessGrant } from "@inrupt/solid-client-access-grants";
 import { getPodUrlAll } from "@inrupt/solid-client";
+import {getSessionServices} from "../helper/session-services";
+import {WeAreEnvironment} from "../helper/environment-helper";
+import {resetFlowSession} from "../helper/session-reset-helper";
 
 export function sessionEndpoint(app: Express) {
 
@@ -57,6 +61,9 @@ export function sessionEndpoint(app: Express) {
           pods?: string[];
           clientId?: string;
           usingCustomCredentials?: boolean;
+          environment?: WeAreEnvironment;
+          clientIndex?: number;
+          clientDisplayName?: string;
           steps?: {
             oidcConfiguration?: unknown;
             clientAuthentication?: unknown;
@@ -106,10 +113,14 @@ export function sessionEndpoint(app: Express) {
           }
         }
 
-        sessionInformation.usingCustomCredentials = !!(req.session.clientId && req.session.clientSecret);
+        const activeServices = getSessionServices(req);
+        sessionInformation.usingCustomCredentials = activeServices.usingCustomCredentials;
         if (sessionInformation.usingCustomCredentials) {
-          sessionInformation.clientId = req.session.clientId;
+          sessionInformation.clientId = activeServices.clientId;
         }
+        sessionInformation.environment = activeServices.environment;
+        sessionInformation.clientIndex = activeServices.clientIndex;
+        sessionInformation.clientDisplayName = activeServices.displayName;
 
         // Summaries of the executed flow steps (mirroring the Postman collection).
         sessionInformation.steps = {
@@ -133,13 +144,49 @@ export function sessionEndpoint(app: Express) {
           sessionInformation.accessGrantExpirationDate = req.session.accessGrantExpirationDate;
         }
 
-        // @ts-ignore
         if(req.session.tokens) {
-          // @ts-ignore
           sessionInformation.tokens = req.session.tokens;
         }
 
         res.json(sessionInformation);
+      } catch (error: any) {
+        // A general error catcher which will, in turn, call the ExpressJS error handler.
+        next(error);
+      }
+    }
+  );
+
+  /**
+   * POST /session/reset
+   *
+   * Resets the flow-related session data (OIDC/HTI authentication state, flow step summaries,
+   * access grants, tokens, ...), logging out of any active Solid session in the process, so the
+   * citizen can restart either demo flow from scratch.
+   *
+   * The active We Are environment and client credentials selection (see `/client-credentials`)
+   * are intentionally left untouched.
+   *
+   * @route {POST} /session/reset
+   *
+   * @returns {Object} The session information after the reset, same shape as `GET /session-information`.
+   *
+   * @throws {Error} Any error that occurs during the reset is passed to the Express error handler.
+   */
+  app.post("/session/reset", (req, res, next) => {
+      log.debug(`Endpoint POST /session/reset called.`);
+      next();
+    }, getSessionOptional.bind({storage: globalThis.solidStorage}), async (req, res, next) => {
+      try {
+        await resetFlowSession(req, res);
+
+        const activeServices = getSessionServices(req);
+        res.json({
+          isLoggedIn: false,
+          usingCustomCredentials: activeServices.usingCustomCredentials,
+          environment: activeServices.environment,
+          clientIndex: activeServices.clientIndex,
+          clientDisplayName: activeServices.displayName
+        });
       } catch (error: any) {
         // A general error catcher which will, in turn, call the ExpressJS error handler.
         next(error);

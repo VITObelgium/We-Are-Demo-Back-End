@@ -4,6 +4,7 @@
  * - The citizen's Web ID obtained via the HTI (Health Tools Interoperability) flow.
  * - Summaries of the individual flow steps (`/flow/*` endpoints), printed by the front-end.
  */
+import {WeAreEnvironment} from "../helper/environment-helper";
 
 /** Summary of the fetched OpenID provider configuration (Postman step 01). */
 export interface OidcConfigurationStep {
@@ -55,10 +56,33 @@ export interface UmaAccessTokenStep {
     obtainedAt: string;
 }
 
+/** Tokens saved on the session via the `saveTokens` login workaround. */
+export interface SessionTokens {
+    idToken: string;
+    accessToken: string;
+}
+
+/** A custom (volatile, session-only) client credential pair, not persisted in the back-end's `.env` file. */
+export interface CustomClientCredentials {
+    clientId: string;
+    clientSecret: string;
+    displayName?: string;
+}
+
 declare module "express-session" {
     interface SessionData {
-        clientId?: string;
-        clientSecret?: string;
+        /** The We Are platform environment (TST/ACC/PRD) selected for this session, see `/client-credentials`. */
+        weAreEnvironment?: WeAreEnvironment;
+        /** The configured client credential index selected for this session, see `/client-credentials`. */
+        clientIndex?: number;
+        /**
+         * Custom (volatile) client credentials entered for this session, keyed by environment.
+         * Kept around per environment so switching environments/back doesn't lose them, but they
+         * are never persisted beyond the session (unlike the `.env`-configured client options).
+         */
+        customCredentials?: Partial<Record<WeAreEnvironment, CustomClientCredentials>>;
+        /** Whether the custom credentials for the active environment are currently selected (vs. `clientIndex`). */
+        usingCustomCredentials?: boolean;
         htiWebId?: string;
         htiToken?: string;
         htiTokenVerified?: boolean;
@@ -74,6 +98,8 @@ declare module "express-session" {
         umaTicket?: UmaTicketStep;
         umaTicketValue?: string;
         umaAccessToken?: UmaAccessTokenStep;
+        /** Tokens saved on the session via the `saveTokens` login workaround. */
+        tokens?: SessionTokens;
     }
 }
 
