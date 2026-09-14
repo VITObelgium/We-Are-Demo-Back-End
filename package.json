@@ -5,7 +5,7 @@
   "main": "src/app.ts",
   "author": "VITO NV",
   "scripts": {
-    "start": "ts-node src/app.ts",
+    "start": "tsx src/app.ts",
     "debug": "tsx watch --inspect=9229 --enable-source-maps src/app.ts"
   },
   "repository": {
@@ -34,7 +34,6 @@
     "@types/node": "^22.10.7",
     "rollup": "^4.30.1",
     "rollup-plugin-typescript2": "^0.36.0",
-    "ts-node": "^10.9.2",
     "tsx": "^4.23.13",
     "typescript": "^5.7.3"
   }
