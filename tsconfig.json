@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "types/**/*.d.ts"],
   "files": ["node_modules/@vito-nv/weare-expressjs/types/global.d.ts"],
   "exclude": ["node_modules", "dist"],
   "compilerOptions": {

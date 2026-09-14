@@ -25,7 +25,6 @@ import vcEndpoint from "./endpoint/vc-endpoint";
 import {credentialsEndpoint} from "./endpoint/credentials-endpoint";
 import {htiEndpoint} from "./endpoint/hti-endpoint";
 import {flowEndpoint} from "./endpoint/flow-endpoint";
-import {extendSessionData} from "./session/session-data";
 import {initializeEnvironment} from "./validate/environment-validate";
 import path from "path";
 
@@ -35,11 +34,6 @@ dotEnv.config();
 // Initialize Express application
 const app = express();
 const cors = require("cors");
-
-/**
- * Call function to customize the express-session
- */
-extendSessionData();
 
 /**
  * Helper function to validate that all necessary environment variables are set.
