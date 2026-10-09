@@ -98,6 +98,8 @@ declare module "express-session" {
         umaTicket?: UmaTicketStep;
         umaTicketValue?: string;
         umaAccessToken?: UmaAccessTokenStep;
+        /** Requested scope(s) passed to /login to be included in the OIDC authorization request. */
+        scope?: string;
         /** Tokens saved on the session via the `saveTokens` login workaround. */
         tokens?: SessionTokens;
     }

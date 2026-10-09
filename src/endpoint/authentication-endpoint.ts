@@ -26,6 +26,7 @@ export function authenticationEndpoint(app: Express) {
    * @route {GET} /login
    *
    * @query {string} redirectUrl - (Optional) A URL to redirect the user to after successful login.
+   * @query {string} scope - (Optional) OAuth scope(s) to request during authentication.
    * @query {boolean} switchIdentity - (Optional) If `true`, includes a login hint to switch the user's identity during authentication.
    *
    * @throws {Error} If an error occurs during the login process, it will be passed to the Express error handler.
@@ -49,12 +50,21 @@ export function authenticationEndpoint(app: Express) {
       if (req.query.redirectUrl)
         req.session.redirectUrl = (new URL(req.query.redirectUrl as string)).href;
 
+      if (req.query.scope)
+        req.session.scope = req.query.scope as string;
+
       await getSessionServices(req).oidcService.login(session, (url: string) => {
         // Todo: workaround for adding scopes to OAuth flow, should be provided by Inrupt SDK.
         const loginUrl = new URL(url);
-        let scope = loginUrl.searchParams.get('scope');
-        if (!scope)
-          scope = "";
+        let scope = loginUrl.searchParams.get('scope') || "";
+
+        const requestedScope = (req.query.scope as string) || req.session.scope;
+        if (requestedScope) {
+          const scopes = new Set(scope.split(" ").filter(Boolean));
+          requestedScope.split(" ").filter(Boolean).forEach(s => scopes.add(s));
+          scope = Array.from(scopes).join(" ");
+        }
+
         loginUrl.searchParams.set('scope', scope);
         loginUrl.searchParams.set('prompt', 'none');
 
@@ -118,6 +128,7 @@ export function authenticationEndpoint(app: Express) {
         delete req.session.umaAccessToken;
         delete req.session.customCredentials;
         delete req.session.usingCustomCredentials;
+        delete req.session.scope;
 
         res.clearCookie(globalThis.sessionCookieName);
 
@@ -182,11 +193,14 @@ export function authenticationEndpoint(app: Express) {
               await getSessionServices(req).oidcService.login(res.locals.session!, (url: string) => {
                 // Todo: workaround for adding scopes to OAuth flow, should be provided by Inrupt SDK.
                 const loginUrl = new URL(url);
-                let scope = loginUrl.searchParams.get('scope');
-                if (scope)
-                  scope += " rrn";
-                else
-                  scope = "rrn";
+                let scope = loginUrl.searchParams.get('scope') || "";
+
+                const scopes = new Set(scope.split(" ").filter(Boolean));
+                scopes.add("rrn");
+                if (req.session.scope) {
+                  req.session.scope.split(" ").filter(Boolean).forEach(s => scopes.add(s));
+                }
+                scope = Array.from(scopes).join(" ");
                 loginUrl.searchParams.set('scope', scope);
 
                 res.redirect(loginUrl.href);
@@ -207,11 +221,14 @@ export function authenticationEndpoint(app: Express) {
             // In this case also switch identity to refresh the session to include the provided web id.
             // Todo: workaround for adding scopes to OAuth flow, should be provided by Inrupt SDK.
             const loginUrl =  new URL(url);
-            let scope = loginUrl.searchParams.get('scope');
-            if(scope)
-              scope += " rrn";
-            else
-              scope = "rrn";
+            let scope = loginUrl.searchParams.get('scope') || "";
+
+            const scopes = new Set(scope.split(" ").filter(Boolean));
+            scopes.add("rrn");
+            if (req.session.scope) {
+              req.session.scope.split(" ").filter(Boolean).forEach(s => scopes.add(s));
+            }
+            scope = Array.from(scopes).join(" ");
             loginUrl.searchParams.set('scope', scope);
 
             // Static string to switch identity, see https://vlaamseoverheid.atlassian.net/wiki/spaces/IKPubliek/pages/6336381158/Wisselen+van+account+doelgroepen

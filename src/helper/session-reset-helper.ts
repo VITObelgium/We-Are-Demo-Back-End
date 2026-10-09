@@ -42,4 +42,5 @@ export async function resetFlowSession(req: Request, res: Response): Promise<voi
     delete req.session.umaTicketValue;
     delete req.session.umaAccessToken;
     delete req.session.tokens;
+    delete req.session.scope;
 }

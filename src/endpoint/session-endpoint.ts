@@ -76,7 +76,8 @@ export function sessionEndpoint(app: Express) {
           tokens?: {
             accessToken: any;
             idToken: any;
-          }
+          };
+          scope?: string;
         } = { isLoggedIn: false };
 
         if (res.locals.session) {
@@ -146,6 +147,10 @@ export function sessionEndpoint(app: Express) {
 
         if(req.session.tokens) {
           sessionInformation.tokens = req.session.tokens;
+        }
+
+        if (req.session.scope) {
+          sessionInformation.scope = req.session.scope;
         }
 
         res.json(sessionInformation);
