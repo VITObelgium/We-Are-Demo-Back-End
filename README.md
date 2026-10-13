@@ -49,6 +49,7 @@ Notes on the implementation:
 - The session storage is defined globally (`globalThis.solidStorage`, an Inrupt `InMemoryStorage` initialized in `global-initialize.ts`), so sessions are kept in memory and not persisted. Persistent storage or cookie-based storage (for a stateless back end) can be used instead.
 - A workaround adds the extra `rrn` scope to the authorization request during login.
 - `/login` supports a `switchIdentity` query parameter, which sets a `login_hint` to force an account/target-group switch at the identity provider.
+- `/login` supports a `prompt` query parameter (`none`, `login`, `consent`, `select_account` or `create`, space separated; `none` cannot be combined). It defaults to `none`.
 - `/oidc-redirect` contains a workaround for citizens that do not have a Web ID and vault yet: a Web ID is provisioned via the Athumi pod platform (`provisionWebId`) and the login is retried.
 
 ### HTI flow

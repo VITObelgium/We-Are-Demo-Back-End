@@ -15,18 +15,39 @@ import log from "loglevel";
 import { getSessionOptional } from "@vito-nv/weare-expressjs";
 import { getSessionServices } from "../helper/session-services";
 
+/** OIDC `prompt` values: OpenID Connect Core 1.0 section 3.1.2.1, plus `create` (OpenID Connect Initiating User Registration). */
+const ALLOWED_PROMPT_VALUES = ["none", "login", "consent", "select_account", "create"];
+const DEFAULT_PROMPT = "none";
+
+/**
+ * Parses and validates the `prompt` query parameter. Returns the default when absent/empty and
+ * `undefined` when invalid (unknown value, or `none` combined with other values).
+ */
+function parsePrompt(rawPrompt: unknown): string | undefined {
+  if (rawPrompt === undefined || rawPrompt === "") return DEFAULT_PROMPT;
+  if (typeof rawPrompt !== "string") return undefined;
+
+  const values = Array.from(new Set(rawPrompt.split(" ").filter(Boolean)));
+  if (!values.length) return DEFAULT_PROMPT;
+  if (values.some(value => !ALLOWED_PROMPT_VALUES.includes(value))) return undefined;
+  if (values.includes("none") && values.length > 1) return undefined;
+
+  return values.join(" ");
+}
+
 export function authenticationEndpoint(app: Express) {
 
    /**
    * GET /login
    *
    * Initiates the Solid OIDC login flow. A session is created, and the user is redirected to the Solid OIDC provider's login page.
-   * The login URL is modified to include additional OAuth scopes (e.g., `rrn`) and identity switching when needed.
+   * The login URL is modified to use the requested OAuth scopes (replacing the SDK default scopes) and identity switching when needed.
    *
    * @route {GET} /login
    *
    * @query {string} redirectUrl - (Optional) A URL to redirect the user to after successful login.
-   * @query {string} scope - (Optional) OAuth scope(s) to request during authentication.
+   * @query {string} scope - (Optional) Space separated OAuth scope(s) to request during authentication. Replaces the SDK default scopes; an empty value clears a previously requested scope.
+   * @query {string} prompt - (Optional) OIDC `prompt` value(s), space separated: `none`, `login`, `consent`, `select_account` or `create`. Defaults to `none`.
    * @query {boolean} switchIdentity - (Optional) If `true`, includes a login hint to switch the user's identity during authentication.
    *
    * @throws {Error} If an error occurs during the login process, it will be passed to the Express error handler.
@@ -36,6 +57,12 @@ export function authenticationEndpoint(app: Express) {
     next();
   }, getSessionOptional.bind({storage: globalThis.solidStorage}), async (req, res, next) => {
     try {
+      const prompt = parsePrompt(req.query.prompt);
+      if (prompt === undefined) {
+        res.status(400).type('text/plain').send(`Invalid prompt. Allowed values: ${ALLOWED_PROMPT_VALUES.join(", ")} (space separated; 'none' cannot be combined with other values).`);
+        return;
+      }
+
       let session = res.locals.session;
 
       if(session?.info.isLoggedIn)
@@ -50,23 +77,23 @@ export function authenticationEndpoint(app: Express) {
       if (req.query.redirectUrl)
         req.session.redirectUrl = (new URL(req.query.redirectUrl as string)).href;
 
-      if (req.query.scope)
-        req.session.scope = req.query.scope as string;
+      // An explicitly passed scope (even an empty one) overrides the scope stored on the session.
+      if (typeof req.query.scope === 'string') {
+        const trimmedScope = req.query.scope.trim();
+        if (trimmedScope) req.session.scope = trimmedScope;
+        else delete req.session.scope;
+      }
 
       await getSessionServices(req).oidcService.login(session, (url: string) => {
-        // Todo: workaround for adding scopes to OAuth flow, should be provided by Inrupt SDK.
+        // Todo: workaround for setting scopes in the OAuth flow, should be provided by Inrupt SDK.
+        // A requested scope replaces the SDK default scope; without one, the SDK default is used.
         const loginUrl = new URL(url);
-        let scope = loginUrl.searchParams.get('scope') || "";
-
-        const requestedScope = (req.query.scope as string) || req.session.scope;
-        if (requestedScope) {
-          const scopes = new Set(scope.split(" ").filter(Boolean));
-          requestedScope.split(" ").filter(Boolean).forEach(s => scopes.add(s));
-          scope = Array.from(scopes).join(" ");
-        }
+        const scope = req.session.scope
+          ? Array.from(new Set(req.session.scope.split(" ").filter(Boolean))).join(" ")
+          : loginUrl.searchParams.get('scope') || "";
 
         loginUrl.searchParams.set('scope', scope);
-        loginUrl.searchParams.set('prompt', 'none');
+        loginUrl.searchParams.set('prompt', prompt);
 
         if(req.query.switchIdentity) {
           // Static string to switch identity, see https://vlaamseoverheid.atlassian.net/wiki/spaces/IKPubliek/pages/6336381158/Wisselen+van+account+doelgroepen
